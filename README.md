@@ -61,7 +61,7 @@ These were chosen because they provide the most relevant overlap between daily a
 - Noted inconsistencies that would require cleaning in R
 
 **Cleaning and Exploration (R)**
-For full R code, click [here](
+For full R code, click [here](https://github.com/shsilv/Bellabeat_Capstone_Project/blob/main/R%20code).
 
 - Load the tidyverse package and data files
 - Ensure data has been loaded correctly
@@ -122,7 +122,7 @@ Higher step counts generally align with longer sleep duration, supporting a conn
 ---
 
 ## 5. Share
-View the dashboard on Tableau Public: [link](here)
+View the dashboard on Tableau Public [here](https://public.tableau.com/app/profile/sarah.hannah.silverstein/viz/Bellabeat_Capstone_Project_17585732966110/InsightsDashboard?publish=yes).
 
 ---
 
