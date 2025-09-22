@@ -1,0 +1,113 @@
+```{r}
+library(tidyverse)
+library(lubridate)
+library(janitor)
+
+# Import data
+daily_activity <- read.csv('dailyActivity_merged.csv')
+sleep_day <- read.csv('sleepDay_merged.csv')
+
+# Inspect structure
+glimpse(daily_activity)
+glimpse(sleep_day)
+View(daily_activity)
+View(sleep_day)
+
+# Clean column names
+daily_activity <- daily_activity %>% clean_names()
+sleep_day <- sleep_day %>% clean_names()
+
+# Check for duplicates
+sum(duplicated(daily_activity))
+sum(duplicated(sleep_day))
+
+# Remove duplicates in sleep dataset
+sleep_day <- sleep_day %>% distinct()
+
+# Convert dates to proper format
+daily_activity <- daily_activity %>% 
+  mutate(activity_date = mdy(activity_date))
+
+sleep_day <- sleep_day %>% 
+  mutate(sleep_day = mdy_hms(sleep_day),
+         sleep_day = as_date(sleep_day)) # keep only date
+
+# Verify ranges
+summary(daily_activity)
+summary(sleep_day)
+
+# Check for missing values
+colSums(is.na(daily_activity))
+colSums(is.na(sleep_day))
+
+# Handle outliers in daily_activity
+daily_activity <- daily_activity %>% 
+  filter(calories > 0,
+         sedentary_minutes < 1440)
+# Remove entries with 0 calories or fully sedentary day, 1440 minutes
+
+# Handle cleaning for sleep_day
+sleep_day <- sleep_day %>% 
+  filter(total_minutes_asleep > 0,
+         total_time_in_bed > 0,
+         total_minutes_asleep <= total_time_in_bed)
+# Remove 0 minutes asleep, ensure logical consistency with total_time_in_bed
+
+# Combine datasets on ID and Date
+daily_summary <- daily_activity %>% 
+  inner_join(sleep_day, by = c("id" = "id", "activity_date" = "sleep_day"))
+
+# Inspect merged data
+View(daily_summary)
+summary(daily_summary)
+
+# Save cleaned datasets
+write_csv(daily_activity, "clean_daily_activity.csv")
+write_csv(sleep_day, "clean_sleep_day.csv")
+write_csv(daily_summary, "clean_daily_summary.csv")
+
+# Visualizations
+
+# Define brand color
+brand_color <- "#FFB19C"
+
+# Total steps by day
+daily_summary %>% 
+  group_by(activity_date) %>% 
+  summarise(total_steps_day = sum(total_steps)) %>% 
+  ggplot(aes(x = activity_date, y = total_steps_day)) +
+  geom_bar(stat = "identity", fill = brand_color) +
+  labs(title = "Total Steps by Day",
+       x = "Date",
+       y = "Total Steps") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+# Sedentary Minutes by Day of Week
+daily_summary %>% 
+  mutate(DayOfWeek = wday(activity_date, label = TRUE)) %>% 
+  group_by(DayOfWeek) %>% 
+  summarise(avg_sedentary = mean(sedentary_minutes)) %>% 
+  ggplot(aes(x = DayOfWeek, y = avg_sedentary, fill = brand_color)) +
+  geom_bar(stat = "identity") +
+  labs(title = "Average Sedentary Minutes by Day of the Week",
+       x = "Day of the Week",
+       y = "Average Sedentary Minutes")
+
+# Sleep Duration
+daily_summary %>%
+  group_by(activity_date) %>%
+  summarise(avg_sleep_hours = mean(total_minutes_asleep/60)) %>%
+  ggplot(aes(x = avg_sleep_hours)) +
+  geom_histogram(binwidth = 0.5, fill = brand_color, color = "white") +
+  labs(title = "Distribution of Average Sleep Duration by Day",
+       x = "Hours Asleep",
+       y = "Count of Days")
+
+# Steps vs Sleep Duration
+ggplot(daily_summary, aes(x = total_steps, y = total_minutes_asleep/60)) +
+  geom_point(alpha = 0.6, color = brand_color) +
+  geom_smooth(method = "lm", se = FALSE, color = brand_color) +
+  labs(title = "Relationship Between Daily Steps and Sleep Duration",
+       x = "Total Steps",
+       y = "Hours Asleep")
+```
